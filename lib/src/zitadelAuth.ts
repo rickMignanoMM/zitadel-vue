@@ -6,6 +6,7 @@ export interface ZITADELConfig {
     issuer: string
     project_resource_id?: string
     org_id?: string
+    needed_project_ids?: Array<string>
 }
 
 export function createZITADELAuth(
@@ -17,14 +18,16 @@ export function createZITADELAuth(
     logger: Logger = console,
     logLevel: LogLevel = LogLevel.Error,
 ) {
-
+    const cfgScopeResourceId = zitadelConfig.needed_project_ids?.length
+        ? zitadelConfig.needed_project_ids.map(id => ` urn:zitadel:iam:org:project:id:${id}:aud`).join('')
+        : ` urn:zitadel:iam:org:project:id:${zitadelConfig.project_resource_id}:aud`;
     const cfg: UserManagerSettings = {
         response_type: 'code',
         scope: 'openid profile email offline_access' +
             (zitadelConfig.project_resource_id ?
-            ` urn:zitadel:iam:org:project:id:${zitadelConfig.project_resource_id}:aud` +
-            ' urn:zitadel:iam:org:projects:roles'
-            : '')
+                cfgScopeResourceId +
+                ' urn:zitadel:iam:org:projects:roles'
+                : '')
             + (zitadelConfig.org_id ? ` urn:zitadel:iam:org:id:${zitadelConfig.org_id}` : ''),
         authority: zitadelConfig.issuer,
         client_id: zitadelConfig.client_id,
